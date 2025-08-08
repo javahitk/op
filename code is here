@@ -1,4 +1,4 @@
-q16.#!/bin/bash
+inq16.#!/bin/bash
 
 echo "Enter the replacement text:"
 read ch
@@ -97,3 +97,7 @@ for file in *; do
         echo "$file"
     fi
 done
+----------------
+q27.find . -atime 14
+------------
+q28.ls -l | grep -i "[0-9] Nov [0-9]"

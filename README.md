@@ -1,1 +1,99 @@
-# op
+#!/bin/bash
+
+echo "Enter the replacement text:"
+read ch
+echo "Enter the line:"
+read ln
+
+# Get the first 4 words
+first_part=$(echo "$ln" | cut -d ' ' -f 1-4)
+
+# Get the 5th word and replace its first 4 characters
+fifth_word=$(echo "$ln" | cut -d ' ' -f 5)
+fifth_word="$ch${fifth_word:4}"
+
+# Get the rest of the line after the 5th word
+rest_part=$(echo "$ln" | cut -d ' ' -f 6-)
+
+# Combine and print
+echo "$first_part $fifth_word $rest_part"
+--------------------------------------------
+#!/bin/bash
+# Prompt for username
+read -p "Enter username: " uname
+
+# Check if the user exists in the currently logged-in users list
+who | grep -w "$uname" > /dev/null
+
+if [ $? -eq 0 ]; then
+    echo "Valid user"
+else
+    echo "Invalid user"
+fi
+--------------------------------------------
+#!/bin/bash
+# Check if username is provided
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <username>"
+    exit 1
+fi
+
+user_home=$(eval echo "~$1")
+history_file="$user_home/.bash_history"
+
+# Check if history file exists
+if [ ! -f "$history_file" ]; then
+    echo "No bash history found for user $1"
+    exit 1
+fi
+
+echo "Last 20 commands used by $1:"
+tail -n 20 "$history_file"
+-------------------------------+---
+#!/bin/bash
+
+hr=$(date +%H)
+
+if [ $hr -ge 6 -a $hr -lt 12 ]; then
+    echo "Good Morning"
+elif [ $hr -ge 12 -a $hr -lt 18 ]; then
+    echo "Good Afternoon"
+elif [ $hr -ge 18 -a $hr -lt 22 ]; then
+    echo "Good Evening"
+else
+    echo "Good Night"
+fi
+-------------------------------------
+#!/bin/bash
+
+# Check if directory argument is provided
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <directory>"
+    exit 1
+fi
+
+dir=$1
+count=0
+
+# List files with size, sort in reverse order by size, and save to temp
+ls -l "$dir" | awk '{print $5, $9}' | sort -nr > temp
+
+while read size name
+do
+    if [ "$size" -gt 500 ]; then
+        echo "$name - $size bytes"
+        count=$((count + 1))
+    fi
+done < temp
+
+echo "Total files exceeding 500 bytes: $count"
+rm -f temp
+------------------------------
+#!/bin/bash
+# Q24: Display list of files in current directory with read, write, and execute permissions
+
+for file in *; do
+    if [ -f "$file" ] && [ -r "$file" ] && [ -w "$file" ] && [ -x "$file" ]; then
+        echo "$file"
+    fi
+done

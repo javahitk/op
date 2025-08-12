@@ -1,103 +1,118 @@
-inq16.#!/bin/bash
+Q1.#include <stdio.h>
+#include <math.h>
 
-echo "Enter the replacement text:"
-read ch
-echo "Enter the line:"
-read ln
+#define D 2      // Dimensions
+#define C 2      // Number of clusters
+#define M 1.26   // Fuzziness
+#define ITER 5   // Number of iterations
 
-# Get the first 4 words
-first_part=$(echo "$ln" | cut -d ' ' -f 1-4)
+double data[100][D];     // Max 100 data points
+double U[100][C];        // Membership matrix
+double centers[C][D];    // Cluster centers
 
-# Get the 5th word and replace its first 4 characters
-fifth_word=$(echo "$ln" | cut -d ' ' -f 5)
-fifth_word="$ch${fifth_word:4}"
+int N; // Number of data points
 
-# Get the rest of the line after the 5th word
-rest_part=$(echo "$ln" | cut -d ' ' -f 6-)
+// Function to update cluster centers
+void updateCenters() {
+    for (int j = 0; j < C; j++) {
+        double numerator[D] = {0.0};
+        double denominator = 0.0;
+        for (int i = 0; i < N; i++) {
+            double u_ij_m = pow(U[i][j], M);
+            for (int k = 0; k < D; k++) {
+                numerator[k] += u_ij_m * data[i][k];
+            }
+            denominator += u_ij_m;
+        }
+        for (int k = 0; k < D; k++) {
+            centers[j][k] = numerator[k] / denominator;
+        }
+    }
+}
 
-# Combine and print
-echo "$first_part $fifth_word $rest_part"
-  --------------------------------------------------------
-  q19.#!/bin/bash
-# Prompt for username
-read -p "Enter username: " uname
+// Function to update membership matrix
+void updateMembership() {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < C; j++) {
+            double sum = 0.0;
+            double dist_ij = 0.0;
 
-# Check if the user exists in the currently logged-in users list
-who | grep -w "$uname" > /dev/null
+            // Distance from point i to cluster j
+            for (int k = 0; k < D; k++) {
+                dist_ij += pow(data[i][k] - centers[j][k], 2);
+            }
+            dist_ij = sqrt(dist_ij);
 
-if [ $? -eq 0 ]; then
-    echo "Valid user"
-else
-    echo "Invalid user"
-fi
-  ----------------------------------------
-  q20.#!/bin/bash
-# Check if username is provided
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <username>"
-    exit 1
-fi
+            for (int l = 0; l < C; l++) {
+                double dist_il = 0.0;
+                for (int k = 0; k < D; k++) {
+                    dist_il += pow(data[i][k] - centers[l][k], 2);
+                }
+                dist_il = sqrt(dist_il);
 
-user_home=$(eval echo "~$1")
-history_file="$user_home/.bash_history"
+                // Avoid division by zero
+                if (dist_il == 0.0) dist_il = 1e-6;
 
-# Check if history file exists
-if [ ! -f "$history_file" ]; then
-    echo "No bash history found for user $1"
-    exit 1
-fi
+                sum += pow(dist_ij / dist_il, 2.0 / (M - 1.0));
+            }
+            U[i][j] = 1.0 / sum;
+        }
+    }
+}
 
-echo "Last 20 commands used by $1:"
-tail -n 20 "$history_file"
-  ----------------------------------------------
-  q21.#!/bin/bash
+// Display function
+void display() {
+    printf("\nCluster Centers:\n");
+    for (int j = 0; j < C; j++) {
+        printf("Cluster %d: (", j + 1);
+        for (int k = 0; k < D; k++) {
+            printf("%.4lf", centers[j][k]);
+            if (k < D - 1) printf(", ");
+        }
+        printf(")\n");
+    }
 
-hr=$(date +%H)
+    printf("\nMembership Matrix:\n");
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < C; j++) {
+            printf("%.4lf ", U[i][j]);
+        }
+        printf("\n");
+    }
+}
 
-if [ $hr -ge 6 -a $hr -lt 12 ]; then
-    echo "Good Morning"
-elif [ $hr -ge 12 -a $hr -lt 18 ]; then
-    echo "Good Afternoon"
-elif [ $hr -ge 18 -a $hr -lt 22 ]; then
-    echo "Good Evening"
-else
-    echo "Good Night"
-fi
-  ---------------------------------------------
-  q23.#!/bin/bash
+int main() {
+    printf("Enter number of data points: ");
+    scanf("%d", &N);
 
-# Check if directory argument is provided
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <directory>"
-    exit 1
-fi
+    printf("Enter %d data points (x y):\n", N);
+    for (int i = 0; i < N; i++) {
+        scanf("%lf %lf", &data[i][0], &data[i][1]);
+    }
 
-dir=$1
-count=0
+    printf("Enter initial membership matrix (%d x %d values):\n", N, C);
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < C; j++) {
+            scanf("%lf", &U[i][j]);
+        }
+    }
 
-# List files with size, sort in reverse order by size, and save to temp
-ls -l "$dir" | awk '{print $5, $9}' | sort -nr > temp
+    printf("\nInitial Membership Matrix:\n");
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < C; j++) {
+            printf("%.4lf ", U[i][j]);
+        }
+        printf("\n");
+    }
 
-while read size name
-do
-    if [ "$size" -gt 500 ]; then
-        echo "$name - $size bytes"
-        count=$((count + 1))
-    fi
-done < temp
+    for (int t = 1; t <= ITER; t++) {
+        printf("\n--- Iteration %d ---\n", t);
+        updateCenters();
+        display();
+        updateMembership();
+    }
 
-echo "Total files exceeding 500 bytes: $count"
-rm -f temp
----------------------------------------------------------
-q24.#!/bin/bash
-# Q24: Display list of files in current directory with read, write, and execute permissions
-
-for file in *; do
-    if [ -f "$file" ] && [ -r "$file" ] && [ -w "$file" ] && [ -x "$file" ]; then
-        echo "$file"
-    fi
-done
-----------------
-q27.find . -atime 14
-------------
-q28.ls -l | grep -i "[0-9] Nov [0-9]"
+    return 0;
+}
+---------------------------+-++---
+-----++++++------++++++------++++---
